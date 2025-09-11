@@ -63,6 +63,30 @@ $ ln -s 当前目录/assets 当前目录/public/storage
 
 ```
 
+```bash
+location / {
+  try_files $uri $uri/ /index.html;
+}
+
+location /api {
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_pass http://localhost:3014/api;
+}
+
+location /socket.io {
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header Host $host;
+
+  proxy_pass http://localhost:3014/socket.io;
+
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "upgrade";
+}
+```
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
