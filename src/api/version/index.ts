@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common'
 import { Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common'
-import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { VersionService } from './version.service'
 import { ApiResult } from '@/decorators'
@@ -30,6 +30,7 @@ export class VersionController {
   }
 
   @Post('upload')
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: '上传资源' })
   @ApiResult({ type: VersionEntity })
   @UseInterceptors(FileInterceptor('file'))

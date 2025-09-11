@@ -3,13 +3,14 @@ import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 
 export function fetchIP(req: Request) {
-  let xForwarded = req.headers['x-real-ip'] as string
+  let xForwarded = req.headers['x-real-ip'] as string | undefined
   if (!xForwarded) {
-    xForwarded =
-      (req.headers['x-forwarded-for'] as string) || (req.ip as string)
+    xForwarded = (req.headers['x-forwarded-for'] as string) || req.ip
   }
+  if (!xForwarded) return ''
   const arr = xForwarded.split(':')
-  return arr[arr.length - 1] || ''
+  const val = arr[arr.length - 1] || ''
+  return val === '1' ? 'localhost' : val
 }
 
 /**

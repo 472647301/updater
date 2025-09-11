@@ -12,7 +12,7 @@ import { urlencoded, json } from 'express'
 import * as dotenv from 'dotenv'
 import * as Log4js from 'log4js'
 import helmet from 'helmet'
-import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface'
+// import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 const log = new Logger('Nest', { timestamp: true })
@@ -51,18 +51,18 @@ async function bootstrap() {
   app.use(compression())
   app.use(helmet())
 
-  const eaglewayHeader: Omit<ParameterObject, 'example' | 'examples'> = {
-    in: 'header',
-    name: 'eagleway',
-    description: 'base64({user,device,system})',
-    schema: { type: 'string', default: '' }
-    // required: true
-  }
+  // const eaglewayHeader: Omit<ParameterObject, 'example' | 'examples'> = {
+  //   in: 'header',
+  //   name: 'eagleway',
+  //   description: 'base64({user,device,system})',
+  //   schema: { type: 'string', default: '' }
+  //   // required: true
+  // }
 
   const builder = new DocumentBuilder()
-  builder.addGlobalParameters(eaglewayHeader)
+  // builder.addGlobalParameters(eaglewayHeader)
   const document = SwaggerModule.createDocument(app, builder.build())
-  SwaggerModule.setup('api/app/docs', app, document)
+  SwaggerModule.setup('api/docs', app, document)
 
   await app.listen(configService.get('PORT') ?? 3001, () => {
     const opts = [

@@ -1,6 +1,6 @@
 import { PackageType, PlatformType } from '@/entities/version.entity'
-import { IsString, IsNotEmpty, IsArray } from 'class-validator'
-import { OmitType } from '@nestjs/swagger'
+import { IsString, IsNotEmpty } from 'class-validator'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
 
 export class VersionCheckQuery {
   /** 版本号 */
@@ -26,10 +26,12 @@ export class VersionUpadteBody extends OmitType(VersionCheckQuery, [
   'id',
   'platform'
 ]) {
-  /** 平台 */
-  @IsArray()
+  @ApiProperty({ type: 'string', format: 'binary' })
+  file: any
+
+  @IsString()
   @IsNotEmpty()
-  platform: PlatformType[]
+  platform: string
 
   /** 0-热更新包,1-全量更新包 */
   type?: PackageType

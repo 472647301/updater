@@ -1,9 +1,9 @@
 import { RecordEntity, UpdateStatus } from '@/entities/record.entity'
-import { PackageType, VersionEntity } from '@/entities/version.entity'
+import { VersionEntity } from '@/entities/version.entity'
+import { PackageType } from '@/entities/version.entity'
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThan } from 'typeorm'
-import { MoreThanOrEqual, FindOptionsWhere, In } from 'typeorm'
+import { Repository, MoreThan, Like } from 'typeorm'
 import { Request } from 'express'
 import { VersionCheckQuery, VersionUpadteBody } from './version.dto'
 import { fetchIP, to } from '@/utils/utils'
@@ -39,24 +39,31 @@ export class VersionService {
 
   async check(req: Request, query: VersionCheckQuery) {
     const version = query.ver.replaceAll('.', '')
-    const where: FindOptionsWhere<VersionEntity> = {
-      enable: 1,
-      name: query.name,
-      platform: In([query.platform]),
-      version: MoreThanOrEqual(Number(version))
-    }
-    if (query.id) where.id = MoreThan(query.id)
-    const list = await this.tVersion.find({
-      where,
-      order: { version: 'DESC', id: 'DESC' }
-    })
-    const item = list?.[0]
+    const [hot, install] = await Promise.all([
+      this.tVersion.findOneBy({
+        type: 0,
+        enable: 1,
+        name: query.name,
+        version: Number(version),
+        platform: Like(`%${query.platform}%`),
+        id: query.id ? MoreThan(query.id) : undefined
+      }),
+      this.tVersion.findOneBy({
+        type: 1,
+        enable: 1,
+        name: query.name,
+        version: MoreThan(Number(version)),
+        platform: Like(`%${query.platform}%`)
+      })
+    ])
+
+    const item = install || hot
     const record = new RecordEntity()
 
     record.request = query
     record.response = item
     record.extras = req.body
-    record.versionId = item?.id
+    record.versionId = item?.id ?? null
     record.status = item ? UpdateStatus.Success : UpdateStatus.None
     record.ip = fetchIP(req)
     const entity = await this.tRecord.save(record)
@@ -91,25 +98,24 @@ export class VersionService {
     const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
     if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
     let downloadUrl = ''
+    const filrName = file.originalname
     const version = body.ver.replaceAll('.', '')
     const dir = `${body.name}/${version}`
     const ossDir = this.configService.get('OSS_DIR') || ''
-    const ossDomain = this.configService.get('OSS_DOMAIN') || ''
     if (this.oss) {
-      const [err, res] = await to(
-        this.oss.put(`${ossDir}${dir}/${file.filename}`, file.buffer)
-      )
+      const ossPath = join(ossDir, dir, filrName)
+      const [err, res] = await to(this.oss.put(ossPath, file.buffer))
       if (res?.res.status !== 200) {
         throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
       }
-      downloadUrl = `${ossDomain}/${ossDir}${dir}/${file.filename}`
+      downloadUrl = ossPath
     } else {
-      const localDir = join(__dirname, `../../../public/${dir}`)
+      const localDir = join(__dirname, `../../../public/files/${dir}`)
       if (!existsSync(localDir)) {
-        mkdirSync(localDir)
+        mkdirSync(localDir, { recursive: true })
       }
-      writeFileSync(`${localDir}/${file.filename}`, file.buffer)
-      downloadUrl = `${req.baseUrl}/${localDir}/${file.filename}`
+      writeFileSync(`${localDir}/${filrName}`, file.buffer)
+      downloadUrl = `${dir}/${filrName}`
     }
     const entity = new VersionEntity()
     entity.version = Number(version)

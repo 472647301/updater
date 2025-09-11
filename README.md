@@ -57,6 +57,12 @@ $ yarn run test:e2e
 $ yarn run test:cov
 ```
 
+```bash
+# 建立软链接
+$ ln -s 当前目录/assets 当前目录/public/storage
+
+```
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

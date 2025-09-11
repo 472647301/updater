@@ -57,11 +57,11 @@ export class VersionEntity {
   downloadUrl: string | null
 
   /** 平台 */
-  @Column('json', {
+  @Column('varchar', {
     name: 'platform',
     comment: '平台'
   })
-  platform: PlatformType[]
+  platform: string
 
   /** 文件大小 */
   @Column('int', {
