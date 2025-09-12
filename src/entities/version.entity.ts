@@ -56,9 +56,9 @@ export class VersionEntity {
   })
   downloadUrl: string | null
 
-  /** 平台 */
+  /** 平台 多平台用逗号拼接 ios,android */
   @Column('varchar', {
-    name: 'platform',
+    name: '平台 多平台用逗号拼接 ios,android',
     comment: '平台'
   })
   platform: string
@@ -78,6 +78,15 @@ export class VersionEntity {
     length: 255
   })
   ip: string
+
+  /** 渠道 appstore或其它,用于全量更新下发不同的链接 */
+  @Column('varchar', {
+    name: 'channel',
+    comment: '渠道 appstore或其它,用于全量更新下发不同的链接',
+    nullable: true,
+    length: 255
+  })
+  channel: string | null
 
   /** 0-热更新包,1-全量更新包 */
   @Column('tinyint', {

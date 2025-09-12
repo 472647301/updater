@@ -20,6 +20,8 @@ export class VersionCheckQuery {
 
   /** 已更新的版本ID */
   id?: number
+  /** 渠道 appstore或其它,用于全量更新下发不同的链接 */
+  channel?: string
 }
 
 export class VersionUpadteBody extends OmitType(VersionCheckQuery, [
@@ -38,6 +40,8 @@ export class VersionUpadteBody extends OmitType(VersionCheckQuery, [
   /** 是否强制更新 */
   isMandatory?: number
   desc?: string
+  /** appstore直接传入下载链接 */
+  downloadUrl?: string
 }
 
 export class VersionCheckEntity {

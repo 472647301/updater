@@ -52,6 +52,7 @@ export class VersionService {
         type: 1,
         enable: 1,
         name: query.name,
+        channel: query.channel,
         version: MoreThan(Number(version)),
         platform: Like(`%${query.platform}%`)
       })
@@ -103,26 +104,32 @@ export class VersionService {
     const version = body.ver.replaceAll('.', '')
     const dir = `${body.name}/${version}`
     const ossDir = this.configService.get('OSS_DIR') || ''
-    if (this.oss) {
-      const ossPath = join(ossDir, dir, filrName)
-      const [err, res] = await to(this.oss.put(ossPath, file.buffer))
-      if (res?.res.status !== 200) {
-        throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
-      }
-      downloadUrl = ossPath
+    if (body.downloadUrl) {
+      // appstore 全量更新
+      downloadUrl = body.downloadUrl
     } else {
-      const localDir = join(__dirname, `../../../public/files/${dir}`)
-      if (!existsSync(localDir)) {
-        mkdirSync(localDir, { recursive: true })
+      if (this.oss) {
+        const ossPath = join(ossDir, dir, filrName)
+        const [err, res] = await to(this.oss.put(ossPath, file.buffer))
+        if (res?.res.status !== 200) {
+          throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
+        }
+        downloadUrl = ossPath
+      } else {
+        const localDir = join(__dirname, `../../../public/files/${dir}`)
+        if (!existsSync(localDir)) {
+          mkdirSync(localDir, { recursive: true })
+        }
+        writeFileSync(`${localDir}/${filrName}`, file.buffer)
+        downloadUrl = `${dir}/${filrName}`
       }
-      writeFileSync(`${localDir}/${filrName}`, file.buffer)
-      downloadUrl = `${dir}/${filrName}`
     }
     const entity = new VersionEntity()
     entity.version = Number(version)
     entity.name = body.name
     entity.desc = body.desc ?? null
     entity.downloadUrl = downloadUrl
+    entity.channel = body.channel ?? null
     entity.platform = body.platform
     entity.isMandatory = body.isMandatory ?? 1
     entity.fileSize = file.size
