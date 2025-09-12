@@ -2,7 +2,7 @@ import { PackageType, PlatformType } from '@/entities/version.entity'
 import { IsString, IsNotEmpty } from 'class-validator'
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 
-export class VersionCheckQuery {
+export class VersionCheckBody {
   /** 版本号 */
   @IsString()
   @IsNotEmpty()
@@ -22,10 +22,12 @@ export class VersionCheckQuery {
   id?: number
   /** 渠道 appstore或其它,用于全量更新下发不同的链接 */
   channel?: string
+  extras?: any
 }
 
-export class VersionUpadteBody extends OmitType(VersionCheckQuery, [
+export class VersionUpadteBody extends OmitType(VersionCheckBody, [
   'id',
+  'extras',
   'platform'
 ]) {
   @ApiProperty({ type: 'string', format: 'binary' })

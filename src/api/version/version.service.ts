@@ -5,7 +5,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, Like } from 'typeorm'
 import { Request } from 'express'
-import { VersionCheckQuery, VersionUpadteBody } from './version.dto'
+import { VersionCheckBody, VersionUpadteBody } from './version.dto'
 import { fetchIP, to } from '@/utils/utils'
 import { apiUtil } from '@/utils/api'
 import { ConfigService } from '@nestjs/config'
@@ -37,33 +37,34 @@ export class VersionService {
     }
   }
 
-  async check(req: Request, query: VersionCheckQuery) {
-    const version = query.ver.replaceAll('.', '')
+  async check(req: Request, body: VersionCheckBody) {
+    const version = body.ver.replaceAll('.', '')
     const [hot, install] = await Promise.all([
       this.tVersion.findOneBy({
         type: 0,
         enable: 1,
-        name: query.name,
+        name: body.name,
         version: Number(version),
-        platform: Like(`%${query.platform}%`),
-        id: query.id ? MoreThan(query.id) : undefined
+        platform: Like(`%${body.platform}%`),
+        id: body.id ? MoreThan(body.id) : undefined
       }),
       this.tVersion.findOneBy({
         type: 1,
         enable: 1,
-        name: query.name,
-        channel: query.channel,
+        name: body.name,
+        channel: body.channel,
         version: MoreThan(Number(version)),
-        platform: Like(`%${query.platform}%`)
+        platform: Like(`%${body.platform}%`)
       })
     ])
 
     const item = install || hot
     const record = new RecordEntity()
-
-    record.request = query
+    const extras = body.extras
+    delete body.extras
+    record.request = body
     record.response = item
-    record.extras = req.body
+    record.extras = extras
     record.versionId = item?.id ?? null
     record.status = item ? UpdateStatus.Success : UpdateStatus.None
     record.ip = fetchIP(req)

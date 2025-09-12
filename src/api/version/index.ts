@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common'
-import { Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Param, Post } from '@nestjs/common'
+import { Req, UploadedFile, UseInterceptors } from '@nestjs/common'
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { VersionService } from './version.service'
 import { ApiResult } from '@/decorators'
-import { VersionCheckQuery, VersionUpadteBody } from './version.dto'
+import { VersionCheckBody, VersionUpadteBody } from './version.dto'
 import { VersionCheckEntity } from './version.dto'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { RecordEntity } from '@/entities/record.entity'
@@ -15,11 +15,11 @@ import { VersionEntity } from '@/entities/version.entity'
 export class VersionController {
   constructor(private readonly service: VersionService) {}
 
-  @Get('check')
+  @Post('check')
   @ApiOperation({ summary: '检查更新' })
   @ApiResult({ type: VersionCheckEntity, status: 200 })
-  check(@Req() req: Request, @Query() query: VersionCheckQuery) {
-    return this.service.check(req, query)
+  check(@Req() req: Request, @Body() body: VersionCheckBody) {
+    return this.service.check(req, body)
   }
 
   @Post('failure/:id')
