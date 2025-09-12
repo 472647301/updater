@@ -72,6 +72,7 @@ export class VersionService {
       id: item?.id,
       desc: item?.desc,
       recordId: entity.id,
+      isMandatory: item?.isMandatory,
       downloadUrl: item?.downloadUrl,
       type: item?.type
     })
@@ -123,6 +124,7 @@ export class VersionService {
     entity.desc = body.desc ?? null
     entity.downloadUrl = downloadUrl
     entity.platform = body.platform
+    entity.isMandatory = body.isMandatory ?? 1
     entity.fileSize = file.size
     entity.ip = fetchIP(req)
     entity.type = body.type ?? PackageType.Hot

@@ -35,6 +35,8 @@ export class VersionUpadteBody extends OmitType(VersionCheckQuery, [
 
   /** 0-热更新包,1-全量更新包 */
   type?: PackageType
+  /** 是否强制更新 */
+  isMandatory?: number
   desc?: string
 }
 
@@ -43,6 +45,8 @@ export class VersionCheckEntity {
   desc?: string
   recordId?: number
   downloadUrl?: string
+  /** 是否强制更新 */
+  isMandatory?: number
   /** 0-热更新包,1-全量更新包 */
   type?: PackageType
 }

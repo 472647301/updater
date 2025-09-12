@@ -95,6 +95,14 @@ export class VersionEntity {
   })
   enable: number
 
+  /** 是否强制更新 */
+  @Column('tinyint', {
+    name: 'is_mandatory',
+    comment: '是否强制更新',
+    default: () => '1'
+  })
+  isMandatory: number
+
   /** 更新时间 */
   @UpdateDateColumn({
     name: 'update_time',
