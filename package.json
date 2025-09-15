@@ -24,7 +24,6 @@
     "pm2:restart": "pm2 delete updater && npm run pm2:start"
   },
   "dependencies": {
-    "@keyv/redis": "^5.1.1",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
@@ -40,7 +39,6 @@
     "compression": "^1.8.1",
     "dayjs": "^1.11.13",
     "helmet": "^8.1.0",
-    "keyv": "^5.5.0",
     "log4js": "^6.9.1",
     "mysql2": "^3.14.3",
     "reflect-metadata": "^0.2.2",

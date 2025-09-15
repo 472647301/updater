@@ -5,11 +5,11 @@ import { DatabaseLogger } from './utils/logs'
 import { join } from 'path'
 import { RecordModule } from './api/record/record.module'
 import { VersionModule } from './api/version/version.module'
-import { CacheModule, CacheInterceptor } from '@nestjs/cache-manager'
-import { APP_INTERCEPTOR } from '@nestjs/core'
-import { CacheableMemory } from 'cacheable'
-import { createKeyv } from '@keyv/redis'
-import { Keyv } from 'keyv'
+// import { CacheModule, CacheInterceptor } from '@nestjs/cache-manager'
+// import { APP_INTERCEPTOR } from '@nestjs/core'
+// import { CacheableMemory } from 'cacheable'
+// import { createKeyv } from '@keyv/redis'
+// import { Keyv } from 'keyv'
 
 @Module({
   imports: [
@@ -17,26 +17,26 @@ import { Keyv } from 'keyv'
       isGlobal: true,
       envFilePath: ['.env.local', '.env']
     }),
-    CacheModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const rHost = configService.get('REDIS_HOST')
-        const rPwd = configService.get('REDIS_PASSWORD')
-        const rPath = `${rHost}:${configService.get('REDIS_PORT')}`
-        const rUser = `${configService.get('REDIS_USERNAME')}:${rPwd}`
-        return {
-          stores: rHost
-            ? createKeyv(
-                rPwd ? `redis://${rUser}@${rPath}` : `redis://${rPath}`
-              )
-            : new Keyv({
-                store: new CacheableMemory({ ttl: 60000, lruSize: 5000 })
-              }),
-          ttl: 60000
-        }
-      },
-      inject: [ConfigService]
-    }),
+    // CacheModule.registerAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: (configService: ConfigService) => {
+    //     const rHost = configService.get('REDIS_HOST')
+    //     const rPwd = configService.get('REDIS_PASSWORD')
+    //     const rPath = `${rHost}:${configService.get('REDIS_PORT')}`
+    //     const rUser = `${configService.get('REDIS_USERNAME')}:${rPwd}`
+    //     return {
+    //       stores: rHost
+    //         ? createKeyv(
+    //             rPwd ? `redis://${rUser}@${rPath}` : `redis://${rPath}`
+    //           )
+    //         : new Keyv({
+    //             store: new CacheableMemory({ ttl: 60000, lruSize: 5000 })
+    //           }),
+    //       ttl: 60000
+    //     }
+    //   },
+    //   inject: [ConfigService]
+    // }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -56,11 +56,11 @@ import { Keyv } from 'keyv'
     VersionModule
   ],
   controllers: [],
-  providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor
-    }
-  ]
+  // providers: [
+  //   {
+  //     provide: APP_INTERCEPTOR,
+  //     useClass: CacheInterceptor
+  //   }
+  // ]
 })
 export class AppModule {}
