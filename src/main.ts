@@ -78,7 +78,8 @@ async function bootstrap() {
       'OSS_BUCKER',
       'OSS_KEY',
       'OSS_SECRET',
-      'OSS_REGION'
+      'OSS_REGION',
+      'OSS_URL'
     ]
     opts.forEach(key => log.log(`${key}=${configService.get(key)}`))
   })
