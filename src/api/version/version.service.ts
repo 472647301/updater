@@ -89,6 +89,7 @@ export class VersionService {
     })
     if (!entity) return apiUtil.data(null)
     entity.status = UpdateStatus.Failure
+    entity.error = req.body.error ?? null
     await this.tRecord.save(entity)
     return apiUtil.data(entity)
   }
@@ -105,6 +106,7 @@ export class VersionService {
     const version = body.ver.replace(/./g, '')
     const dir = `${body.name}/${version}`
     const ossDir = this.configService.get('OSS_DIR') || ''
+    const ossUrl = this.configService.get('OSS_URL') || ''
     if (body.downloadUrl) {
       // appstore 全量更新
       downloadUrl = body.downloadUrl
@@ -115,7 +117,7 @@ export class VersionService {
         if (res?.res.status !== 200) {
           throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
         }
-        downloadUrl = ossPath
+        downloadUrl = `${ossUrl}${ossPath}`
       } else {
         const localDir = join(__dirname, `../../../public/files/${dir}`)
         if (!existsSync(localDir)) {

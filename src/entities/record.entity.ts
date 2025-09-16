@@ -51,6 +51,14 @@ export class RecordEntity {
   })
   extras: Record<string, any> | null
 
+  /** 安装失败信息 */
+  @Column('text', {
+    name: 'error',
+    comment: '安装失败信息',
+    nullable: true
+  })
+  error: string | null
+
   /** IP */
   @Column('varchar', {
     name: 'ip',
