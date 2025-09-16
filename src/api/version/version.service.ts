@@ -142,7 +142,7 @@ export class VersionService {
     const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
     if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
     let downloadUrl = ''
-    const filrName = file.originalname
+    const filrName = `${Date.now()}.${file.originalname.split('.').pop()}`
     const version = body.ver.replace(/\./g, '')
     const dir = `${body.name}/${version}`
     const ossDir = this.configService.get('OSS_DIR') || ''
@@ -157,7 +157,7 @@ export class VersionService {
         if (res?.res.status !== 200) {
           throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
         }
-        downloadUrl = `${ossUrl}/${ossPath}?t=${Date.now()}`
+        downloadUrl = `${ossUrl}/${ossPath}`
       } else {
         const localDir = join(__dirname, `../../../public/files/${dir}`)
         if (!existsSync(localDir)) {
