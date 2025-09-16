@@ -38,7 +38,7 @@ export class VersionService {
   }
 
   async check(req: Request, body: VersionCheckBody) {
-    const version = body.ver.replace(/./g, '')
+    const version = body.ver.replace(/\./g, '')
     const [hot, install] = await Promise.all([
       this.tVersion.findOneBy({
         type: 0,
@@ -103,7 +103,7 @@ export class VersionService {
     if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
     let downloadUrl = ''
     const filrName = file.originalname
-    const version = body.ver.replace(/./g, '')
+    const version = body.ver.replace(/\./g, '')
     const dir = `${body.name}/${version}`
     const ossDir = this.configService.get('OSS_DIR') || ''
     const ossUrl = this.configService.get('OSS_URL') || ''
