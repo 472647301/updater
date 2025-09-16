@@ -3,9 +3,10 @@ import { VersionEntity } from '@/entities/version.entity'
 import { PackageType } from '@/entities/version.entity'
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThan, Like } from 'typeorm'
+import { Repository, MoreThan, Like, FindOptionsWhere, Between } from 'typeorm'
 import { Request } from 'express'
 import { VersionCheckBody, VersionUpadteBody } from './version.dto'
+import { VersionPageBody } from './version.dto'
 import { fetchIP, to } from '@/utils/utils'
 import { apiUtil } from '@/utils/api'
 import { ConfigService } from '@nestjs/config'
@@ -35,6 +36,39 @@ export class VersionService {
     if (bucket && accessKeyId && accessKeySecret && region) {
       return { bucket, accessKeyId, accessKeySecret, region }
     }
+  }
+
+  async page(req: Request, body: VersionPageBody) {
+    const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
+    if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
+    const take = Number(body.pageSize || 20)
+    const current = Number(body.current || 1)
+    const skip = take * (current - 1)
+    const where: FindOptionsWhere<VersionEntity> = {}
+    if (body.createTime && body.createTime.length === 2) {
+      where.createTime = Between(body.createTime[0], body.createTime[1])
+    }
+    if (body.updateTime && body.updateTime.length === 2) {
+      where.updateTime = Between(body.updateTime[0], body.updateTime[1])
+    }
+    if (body.ip) where.ip = body.ip
+    if (typeof body.type === 'number') where.type = body.type
+    if (typeof body.enable === 'number') where.enable = body.enable
+    if (typeof body.isMandatory === 'number')
+      where.isMandatory = body.isMandatory
+    if (body.platform) where.platform = body.platform
+    if (body.desc) where.desc = Like(`%${body.desc}%`)
+    if (body.channel) where.channel = body.channel
+    if (body.version) where.version = body.version
+    if (body.name) where.name = body.name
+    if (body.ip) where.ip = Like(`%${body.ip}%`)
+    const [list, total] = await this.tVersion.findAndCount({
+      take: take,
+      skip: skip,
+      where: where,
+      order: body.order ?? { id: 'DESC' }
+    })
+    return apiUtil.page(list, total)
   }
 
   async check(req: Request, body: VersionCheckBody) {
@@ -117,7 +151,7 @@ export class VersionService {
         if (res?.res.status !== 200) {
           throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
         }
-        downloadUrl = `${ossUrl}/${ossPath}`
+        downloadUrl = `${ossUrl}/${ossPath}?v=${version}`
       } else {
         const localDir = join(__dirname, `../../../public/files/${dir}`)
         if (!existsSync(localDir)) {
@@ -135,7 +169,7 @@ export class VersionService {
     entity.downloadUrl = downloadUrl
     entity.channel = body.channel ?? null
     entity.platform = body.platform
-    entity.isMandatory = body.isMandatory ? Number(body.isMandatory) :  1
+    entity.isMandatory = body.isMandatory ? Number(body.isMandatory) : 1
     entity.fileSize = file.size
     entity.ip = fetchIP(req)
     entity.type = body.type ?? PackageType.Hot

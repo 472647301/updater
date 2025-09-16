@@ -4,8 +4,8 @@ import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { VersionService } from './version.service'
 import { ApiResult } from '@/decorators'
-import { VersionCheckBody, VersionUpadteBody } from './version.dto'
-import { VersionCheckEntity } from './version.dto'
+import { VersionCheckBody, VersionPageBody } from './version.dto'
+import { VersionCheckEntity, VersionUpadteBody } from './version.dto'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { RecordEntity } from '@/entities/record.entity'
 import { VersionEntity } from '@/entities/version.entity'
@@ -14,6 +14,13 @@ import { VersionEntity } from '@/entities/version.entity'
 @Controller('version')
 export class VersionController {
   constructor(private readonly service: VersionService) {}
+
+  @Post('page')
+  @ApiOperation({ summary: '分页列表' })
+  @ApiResult({ type: VersionEntity, isPage: true })
+  page(@Req() req: Request, @Body() body: VersionPageBody) {
+    return this.service.page(req, body)
+  }
 
   @Post('check')
   @ApiOperation({ summary: '检查更新' })

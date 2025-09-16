@@ -1,6 +1,18 @@
+import { VersionEntity } from '@/entities/version.entity'
 import { PackageType, PlatformType } from '@/entities/version.entity'
 import { IsString, IsNotEmpty } from 'class-validator'
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
+import { FindOptionsOrder } from 'typeorm'
+
+export class VersionPageBody extends PartialType(
+  OmitType(VersionEntity, ['createTime', 'updateTime'])
+) {
+  current?: number
+  pageSize?: number
+  createTime?: Date[]
+  updateTime?: Date[]
+  order?: FindOptionsOrder<VersionEntity>
+}
 
 export class VersionCheckBody {
   /** 版本号 */
