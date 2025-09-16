@@ -74,21 +74,27 @@ export class VersionService {
   async check(req: Request, body: VersionCheckBody) {
     const version = body.ver.replace(/\./g, '')
     const [hot, install] = await Promise.all([
-      this.tVersion.findOneBy({
-        type: 0,
-        enable: 1,
-        name: body.name,
-        version: Number(version),
-        platform: Like(`%${body.platform}%`),
-        id: body.id ? MoreThan(body.id) : undefined
+      this.tVersion.findOne({
+        where: {
+          type: 0,
+          enable: 1,
+          name: body.name,
+          version: Number(version),
+          platform: Like(`%${body.platform}%`),
+          id: body.id ? MoreThan(body.id) : undefined
+        },
+        order: { id: 'DESC' }
       }),
-      this.tVersion.findOneBy({
-        type: 1,
-        enable: 1,
-        name: body.name,
-        channel: body.channel,
-        version: MoreThan(Number(version)),
-        platform: Like(`%${body.platform}%`)
+      this.tVersion.findOne({
+        where: {
+          type: 1,
+          enable: 1,
+          name: body.name,
+          channel: body.channel,
+          version: MoreThan(Number(version)),
+          platform: Like(`%${body.platform}%`)
+        },
+        order: { id: 'DESC' }
       })
     ])
 
