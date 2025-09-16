@@ -151,7 +151,7 @@ export class VersionService {
         if (res?.res.status !== 200) {
           throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
         }
-        downloadUrl = `${ossUrl}/${ossPath}?v=${version}`
+        downloadUrl = `${ossUrl}/${ossPath}?t=${Date.now()}`
       } else {
         const localDir = join(__dirname, `../../../public/files/${dir}`)
         if (!existsSync(localDir)) {
