@@ -34,6 +34,7 @@ export class VersionCheckBody {
   id?: number
   /** 渠道 appstore或其它,用于全量更新下发不同的链接 */
   channel?: string
+  /** 额外记录信息 */
   extras?: any
 }
 
@@ -49,13 +50,27 @@ export class VersionUpadteBody extends OmitType(VersionCheckBody, [
   @IsNotEmpty()
   platform: string
 
-  /** 0-热更新包,1-全量更新包 */
-  type?: PackageType
   /** 是否强制更新 */
   isMandatory?: number
   desc?: string
-  /** appstore直接传入下载链接 */
-  downloadUrl?: string
+}
+
+export class VersionCreateBody extends OmitType(VersionCheckBody, [
+  'id',
+  'extras',
+  'platform'
+]) {
+  /** 多平台用逗号拼接 */
+  @IsString()
+  @IsNotEmpty()
+  platform: string
+
+  /** 下载链接 */
+  @IsString()
+  @IsNotEmpty()
+  downloadUrl: string
+
+  desc?: string
 }
 
 export class VersionCheckEntity {

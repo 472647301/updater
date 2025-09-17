@@ -6,6 +6,7 @@ import { VersionService } from './version.service'
 import { ApiResult } from '@/decorators'
 import { VersionCheckBody, VersionPageBody } from './version.dto'
 import { VersionCheckEntity, VersionUpadteBody } from './version.dto'
+import { VersionCreateBody } from './version.dto'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { RecordEntity } from '@/entities/record.entity'
 import { VersionEntity } from '@/entities/version.entity'
@@ -22,15 +23,22 @@ export class VersionController {
     return this.service.page(req, body)
   }
 
+  @Post('create')
+  @ApiOperation({ summary: '发布全量更新' })
+  @ApiResult({ type: VersionEntity })
+  create(@Req() req: Request, @Body() body: VersionCreateBody) {
+    return this.service.create(req, body)
+  }
+
   @Post('check')
   @ApiOperation({ summary: '检查更新' })
-  @ApiResult({ type: VersionCheckEntity, status: 200 })
+  @ApiResult({ type: VersionCheckEntity })
   check(@Req() req: Request, @Body() body: VersionCheckBody) {
     return this.service.check(req, body)
   }
 
   @Post('failure/:id')
-  @ApiOperation({ summary: '更新失败' })
+  @ApiOperation({ summary: '上报更新失败' })
   @ApiResult({ type: RecordEntity })
   failure(@Req() req: Request, @Param('id') id: string) {
     return this.service.failure(req, id)
@@ -38,7 +46,7 @@ export class VersionController {
 
   @Post('upload')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '上传资源' })
+  @ApiOperation({ summary: '上传热更新包' })
   @ApiResult({ type: VersionEntity })
   @UseInterceptors(FileInterceptor('file'))
   upload(

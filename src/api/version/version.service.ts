@@ -6,17 +6,15 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, Like, FindOptionsWhere, Between } from 'typeorm'
 import { Request } from 'express'
 import { VersionCheckBody, VersionUpadteBody } from './version.dto'
-import { VersionPageBody } from './version.dto'
-import { fetchIP, to } from '@/utils/utils'
+import { VersionPageBody, VersionCreateBody } from './version.dto'
+import { fetchIP } from '@/utils/utils'
 import { apiUtil } from '@/utils/api'
 import { ConfigService } from '@nestjs/config'
-import * as AliOSS from 'ali-oss'
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { UpdaterUtil } from '@/utils/updater'
 
 @Injectable()
 export class VersionService {
-  private oss?: AliOSS
+  private updater?: UpdaterUtil
   constructor(
     private readonly configService: ConfigService,
     @InjectRepository(RecordEntity)
@@ -24,18 +22,7 @@ export class VersionService {
     @InjectRepository(VersionEntity)
     private readonly tVersion: Repository<VersionEntity>
   ) {
-    const opts = this.fetchOSSOptions()
-    if (opts) this.oss = new AliOSS(opts)
-  }
-
-  private fetchOSSOptions(): AliOSS.Options | undefined {
-    const bucket = this.configService.get<string>('OSS_BUCKER')
-    const accessKeyId = this.configService.get<string>('OSS_KEY')
-    const accessKeySecret = this.configService.get<string>('OSS_SECRET')
-    const region = this.configService.get<string>('OSS_REGION')
-    if (bucket && accessKeyId && accessKeySecret && region) {
-      return { bucket, accessKeyId, accessKeySecret, region }
-    }
+    this.updater = new UpdaterUtil(configService)
   }
 
   async page(req: Request, body: VersionPageBody) {
@@ -69,6 +56,22 @@ export class VersionService {
       order: body.order ?? { id: 'DESC' }
     })
     return apiUtil.page(list, total)
+  }
+
+  async create(req: Request, body: VersionCreateBody) {
+    const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
+    if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
+    const version = body.ver.replace(/\./g, '')
+    const entity = new VersionEntity()
+    entity.version = Number(version)
+    entity.name = body.name
+    entity.desc = body.desc ?? null
+    entity.downloadUrl = body.downloadUrl
+    entity.platform = body.platform
+    entity.type = PackageType.Install
+    entity.ip = fetchIP(req)
+    const res = await this.tVersion.save(entity)
+    return apiUtil.data(res)
   }
 
   async check(req: Request, body: VersionCheckBody) {
@@ -142,43 +145,23 @@ export class VersionService {
     const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
     if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
     let downloadUrl = ''
-    const filrName = `${Date.now()}.${file.originalname.split('.').pop()}`
     const version = body.ver.replace(/\./g, '')
     const dir = `${body.name}/${version}`
-    const ossDir = this.configService.get('OSS_DIR') || ''
-    const ossUrl = this.configService.get('OSS_URL') || ''
-    if (body.downloadUrl) {
-      // appstore 全量更新
-      downloadUrl = body.downloadUrl
-    } else {
-      if (this.oss) {
-        const ossPath = join(ossDir, dir, filrName)
-        const [err, res] = await to(this.oss.put(ossPath, file.buffer))
-        if (res?.res.status !== 200) {
-          throw new HttpException(err ?? res, HttpStatus.BAD_REQUEST)
-        }
-        downloadUrl = `${ossUrl}/${ossPath}`
-      } else {
-        const localDir = join(__dirname, `../../../public/files/${dir}`)
-        if (!existsSync(localDir)) {
-          mkdirSync(localDir, { recursive: true })
-        }
-        // @ts-ignore
-        writeFileSync(`${localDir}/${filrName}`, file.buffer)
-        downloadUrl = `${dir}/${filrName}`
-      }
+    try {
+      downloadUrl = await this.updater?.put(dir, file)
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST)
     }
     const entity = new VersionEntity()
     entity.version = Number(version)
     entity.name = body.name
     entity.desc = body.desc ?? null
     entity.downloadUrl = downloadUrl
-    entity.channel = body.channel ?? null
     entity.platform = body.platform
     entity.isMandatory = body.isMandatory ? Number(body.isMandatory) : 1
+    entity.type = PackageType.Hot
     entity.fileSize = file.size
     entity.ip = fetchIP(req)
-    entity.type = body.type ?? PackageType.Hot
     const res = await this.tVersion.save(entity)
     return apiUtil.data(res)
   }
