@@ -102,24 +102,26 @@ export class VersionService {
     ])
 
     const item = install || hot
+    if (!item) return apiUtil.data({})
+
     const record = new RecordEntity()
     const extras = body.extras
     delete body.extras
     record.request = body
     record.response = item
     record.extras = extras
-    record.versionId = item?.id ?? null
-    record.status = item ? UpdateStatus.Success : UpdateStatus.None
+    record.versionId = item.id
+    record.status = UpdateStatus.Success
     record.ip = fetchIP(req)
     const entity = await this.tRecord.save(record)
 
     return apiUtil.data({
-      id: item?.id,
-      desc: item?.desc,
+      id: item.id,
+      desc: item.desc,
       recordId: entity.id,
-      isMandatory: item?.isMandatory,
-      downloadUrl: item?.downloadUrl,
-      type: item?.type
+      isMandatory: item.isMandatory,
+      downloadUrl: item.downloadUrl,
+      type: item.type
     })
   }
 
