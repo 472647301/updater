@@ -2,23 +2,17 @@ import { RecordEntity } from '@/entities/record.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Between, FindOptionsWhere, Like, Repository } from 'typeorm'
-import { Request } from 'express'
 import { RecordPageBody } from './record.dto'
 import { apiUtil } from '@/utils/api'
-import { ConfigService } from '@nestjs/config'
-import { fetchIP } from '@/utils/utils'
 
 @Injectable()
 export class RecordService {
   constructor(
-    private readonly configService: ConfigService,
     @InjectRepository(RecordEntity)
     private readonly tRecord: Repository<RecordEntity>
   ) {}
 
-  async page(req: Request, body: RecordPageBody) {
-    const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
-    if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
+  async page(body: RecordPageBody) {
     const take = Number(body.pageSize || 20)
     const current = Number(body.current || 1)
     const skip = take * (current - 1)

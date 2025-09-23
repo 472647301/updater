@@ -1,6 +1,7 @@
 import { Body, Controller, Param, Post } from '@nestjs/common'
 import { Req, UploadedFile, UseInterceptors } from '@nestjs/common'
-import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger'
+import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { VersionService } from './version.service'
 import { ApiResult } from '@/decorators'
@@ -17,13 +18,15 @@ export class VersionController {
   constructor(private readonly service: VersionService) {}
 
   @Post('page')
+  @ApiBearerAuth()
   @ApiOperation({ summary: '分页列表' })
   @ApiResult({ type: VersionEntity, isPage: true })
-  page(@Req() req: Request, @Body() body: VersionPageBody) {
-    return this.service.page(req, body)
+  page(@Body() body: VersionPageBody) {
+    return this.service.page(body)
   }
 
   @Post('create')
+  @ApiBearerAuth()
   @ApiOperation({ summary: '发布全量更新' })
   @ApiResult({ type: VersionEntity })
   create(@Req() req: Request, @Body() body: VersionCreateBody) {
@@ -45,6 +48,7 @@ export class VersionController {
   }
 
   @Post('upload')
+  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: '上传热更新包' })
   @ApiResult({ type: VersionEntity })

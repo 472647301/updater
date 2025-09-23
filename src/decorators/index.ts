@@ -1,5 +1,13 @@
-import { Type, applyDecorators, HttpStatus } from '@nestjs/common'
+import { Type, applyDecorators, HttpStatus, SetMetadata } from '@nestjs/common'
 import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger'
+
+export const IS_PUBLIC_KEY = 'isPublic'
+
+/**
+ * @name: 不检查token装饰器
+ * @example `@Public()`
+ */
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true)
 
 const baseTypeNames = ['String', 'Number', 'Boolean']
 

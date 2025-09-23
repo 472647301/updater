@@ -4,7 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common'
 import { ExceptionFilter } from './middleware/exception.filter'
 import { TransformInterceptor } from './middleware/transform.interceptor'
 import { NestExpressApplication } from '@nestjs/platform-express'
-
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { log4jsConfigure } from './utils/logs'
 import { ConfigService } from '@nestjs/config'
 import * as compression from 'compression'
@@ -12,17 +12,18 @@ import { urlencoded, json } from 'express'
 import * as dotenv from 'dotenv'
 import * as Log4js from 'log4js'
 import helmet from 'helmet'
-// import { ParameterObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface'
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
-const log = new Logger('Nest', { timestamp: true })
+const log = new Logger('Nest', {
+  timestamp: true
+})
 
 dotenv.config({ path: '.env' })
 
 // log日志 只保留最近7天
 Log4js.configure(log4jsConfigure())
 
-// @hey-api/openapi-ts
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true
@@ -51,37 +52,18 @@ async function bootstrap() {
   app.use(compression())
   app.use(helmet())
 
-  // const eaglewayHeader: Omit<ParameterObject, 'example' | 'examples'> = {
-  //   in: 'header',
-  //   name: 'eagleway',
-  //   description: 'base64({user,device,system})',
-  //   schema: { type: 'string', default: '' }
-  //   // required: true
-  // }
-
   const builder = new DocumentBuilder()
-  // builder.addGlobalParameters(eaglewayHeader)
+  // 文档接口鉴权
+  builder.addBearerAuth()
   const document = SwaggerModule.createDocument(app, builder.build())
   SwaggerModule.setup('api/docs', app, document)
 
-  await app.listen(configService.get('PORT') ?? 3001, () => {
-    const opts = [
-      'PORT',
-      'ORM_HOST',
-      'ORM_PORT',
-      'ORM_USERNAME',
-      'ORM_PASSWORD',
-      'ORM_DATABASE',
-      'REDIS_HOST',
-      'REDIS_PORT',
-      'WHITELIST_IP',
-      'OSS_BUCKER',
-      'OSS_KEY',
-      'OSS_SECRET',
-      'OSS_REGION',
-      'OSS_URL'
-    ]
-    opts.forEach(key => log.log(`${key}=${configService.get(key)}`))
+  await app.listen(configService.get('PORT') || 3001, () => {
+    const text = readFileSync(join(__dirname, '../.env.example')).toString()
+    const arr = text.split('\n').filter(str => str.indexOf('#') === -1)
+    arr.forEach(key =>
+      log.log(`${key}${configService.get(key.replace('=', ''))}`)
+    )
   })
 }
 

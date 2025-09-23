@@ -1,6 +1,5 @@
-import { Body, Controller, Req, Post } from '@nestjs/common'
-import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import type { Request } from 'express'
+import { Body, Controller, Post } from '@nestjs/common'
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { ApiResult } from '@/decorators'
 import { RecordService } from './record.service'
 import { RecordPageBody } from './record.dto'
@@ -12,9 +11,10 @@ export class RecordController {
   constructor(private readonly service: RecordService) {}
 
   @Post('page')
+  @ApiBearerAuth()
   @ApiOperation({ summary: '分页列表' })
   @ApiResult({ type: RecordEntity, isPage: true })
-  page(@Req() req: Request, @Body() body: RecordPageBody) {
-    return this.service.page(req, body)
+  page(@Body() body: RecordPageBody) {
+    return this.service.page(body)
   }
 }

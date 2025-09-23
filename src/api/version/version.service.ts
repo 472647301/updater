@@ -22,12 +22,10 @@ export class VersionService {
     @InjectRepository(VersionEntity)
     private readonly tVersion: Repository<VersionEntity>
   ) {
-    this.updater = new UpdaterUtil(configService)
+    this.updater = new UpdaterUtil(this.configService)
   }
 
-  async page(req: Request, body: VersionPageBody) {
-    const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
-    if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
+  async page(body: VersionPageBody) {
     const take = Number(body.pageSize || 20)
     const current = Number(body.current || 1)
     const skip = take * (current - 1)
@@ -59,8 +57,6 @@ export class VersionService {
   }
 
   async create(req: Request, body: VersionCreateBody) {
-    const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
-    if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
     const version = body.ver.replace(/\./g, '')
     const entity = new VersionEntity()
     entity.version = Number(version)
@@ -144,8 +140,6 @@ export class VersionService {
     file: Express.Multer.File,
     body: VersionUpadteBody
   ) {
-    const ips = this.configService.get<string>('WHITELIST_IP')?.split(',') ?? []
-    if (!ips.includes(fetchIP(req))) return apiUtil.data(null)
     let downloadUrl = ''
     const version = body.ver.replace(/\./g, '')
     const dir = `${body.name}/${version}`
