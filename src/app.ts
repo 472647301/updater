@@ -5,7 +5,7 @@ import { DatabaseLogger } from './utils/logs'
 import { join } from 'path'
 import { RecordModule } from './api/record/record.module'
 import { VersionModule } from './api/version/version.module'
-import { AuthModule } from './auth/auth.module'
+import { AdminModule } from './api/admin/admin.module'
 
 @Module({
   imports: [
@@ -28,7 +28,7 @@ import { AuthModule } from './auth/auth.module'
       }),
       inject: [ConfigService]
     }),
-    AuthModule,
+    AdminModule,
     RecordModule,
     VersionModule
   ],

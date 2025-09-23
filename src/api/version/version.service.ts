@@ -1,7 +1,7 @@
 import { RecordEntity, UpdateStatus } from '@/entities/record.entity'
 import { VersionEntity } from '@/entities/version.entity'
 import { PackageType } from '@/entities/version.entity'
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, Like, FindOptionsWhere, Between } from 'typeorm'
 import { Request } from 'express'
@@ -146,7 +146,7 @@ export class VersionService {
     try {
       downloadUrl = await this.updater?.put(dir, file)
     } catch (err) {
-      throw new HttpException(err, HttpStatus.BAD_REQUEST)
+      return apiUtil.error(err)
     }
     const entity = new VersionEntity()
     entity.version = Number(version)

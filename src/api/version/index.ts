@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { VersionService } from './version.service'
-import { ApiResult } from '@/decorators'
+import { ApiResult, Public } from '@/decorators'
 import { VersionCheckBody, VersionPageBody } from './version.dto'
 import { VersionCheckEntity, VersionUpadteBody } from './version.dto'
 import { VersionCreateBody } from './version.dto'
@@ -33,6 +33,7 @@ export class VersionController {
     return this.service.create(req, body)
   }
 
+  @Public()
   @Post('check')
   @ApiOperation({ summary: '检查更新' })
   @ApiResult({ type: VersionCheckEntity })
@@ -40,6 +41,7 @@ export class VersionController {
     return this.service.check(req, body)
   }
 
+  @Public()
   @Post('failure/:id')
   @ApiOperation({ summary: '上报更新失败' })
   @ApiResult({ type: RecordEntity })
