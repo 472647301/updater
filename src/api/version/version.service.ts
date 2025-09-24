@@ -78,6 +78,7 @@ export class VersionService {
           type: 0,
           enable: 1,
           name: body.name,
+          channel: body.channel,
           version: Number(version),
           platform: Like(`%${body.platform}%`),
           id: body.id ? MoreThan(body.id) : undefined
