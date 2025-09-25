@@ -65,6 +65,7 @@ export class VersionService {
     entity.downloadUrl = body.downloadUrl
     entity.platform = body.platform
     entity.type = PackageType.Install
+    entity.channel = body.channel
     entity.ip = fetchIP(req)
     const res = await this.tVersion.save(entity)
     return apiUtil.data(res)
@@ -156,6 +157,7 @@ export class VersionService {
     entity.downloadUrl = downloadUrl
     entity.platform = body.platform
     entity.isMandatory = body.isMandatory ? Number(body.isMandatory) : 1
+    entity.channel = body.channel
     entity.type = PackageType.Hot
     entity.fileSize = file.size
     entity.ip = fetchIP(req)
