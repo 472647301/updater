@@ -5,6 +5,10 @@ import { AdminLoginBody } from './admin.dto'
 import { apiUtil } from '@/utils/api'
 import { AdminEntity } from '@/entities/admin.entity'
 import { AuthService } from '@/auth/auth.service'
+import { join } from 'path'
+import { existsSync } from 'fs'
+
+const lockPath = join(__dirname, '../../../public/admin.lock')
 
 @Injectable()
 export class AdminService {
@@ -13,6 +17,18 @@ export class AdminService {
     @InjectRepository(AdminEntity)
     private readonly admin: Repository<AdminEntity>
   ) {}
+
+  async create(body: AdminLoginBody) {
+    if (existsSync(lockPath)) apiUtil.error('非法操作')
+    const user = await this.admin.findOneBy({
+      username: body.username
+    })
+    if (user) return apiUtil.error('账号已存在')
+    const entity = new AdminEntity()
+    entity.username = body.username
+    entity.password = body.password
+    return this.admin.save(entity)
+  }
 
   async login(body: AdminLoginBody) {
     const user = await this.admin.findOneBy({

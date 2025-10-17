@@ -10,6 +10,15 @@ export class AdminController {
   constructor(private readonly service: AdminService) {}
 
   @Public()
+  @Post('create')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '管理员创建' })
+  @ApiResult({ type: String })
+  create(@Body() body: AdminLoginBody) {
+    return this.service.create(body)
+  }
+
+  @Public()
   @Post('login')
   @ApiBearerAuth()
   @ApiOperation({ summary: '管理员登录' })

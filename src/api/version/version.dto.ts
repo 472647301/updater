@@ -34,13 +34,10 @@ export class VersionCheckBody {
   id?: number
   /** 渠道 appstore或其它,用于全量更新下发不同的链接 */
   channel?: string
-  /** 额外记录信息 */
-  extras?: any
 }
 
 export class VersionUpadteBody extends OmitType(VersionCheckBody, [
   'id',
-  'extras',
   'platform'
 ]) {
   @ApiProperty({ type: 'string', format: 'binary' })
@@ -57,7 +54,6 @@ export class VersionUpadteBody extends OmitType(VersionCheckBody, [
 
 export class VersionCreateBody extends OmitType(VersionCheckBody, [
   'id',
-  'extras',
   'platform'
 ]) {
   /** 多平台用逗号拼接 */
@@ -76,7 +72,6 @@ export class VersionCreateBody extends OmitType(VersionCheckBody, [
 export class VersionCheckEntity {
   id?: number
   desc?: string
-  recordId?: number
   downloadUrl?: string
   /** 是否强制更新 */
   isMandatory?: number

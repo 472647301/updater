@@ -21,7 +21,7 @@ export class AdminEntity {
   /** 密码 */
   @Column('varchar', {
     name: 'password',
-    comment: '用户名',
+    comment: '密码',
     length: 255
   })
   password: string

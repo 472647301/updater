@@ -9,7 +9,6 @@ import { VersionCheckBody, VersionPageBody } from './version.dto'
 import { VersionCheckEntity, VersionUpadteBody } from './version.dto'
 import { VersionCreateBody } from './version.dto'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { RecordEntity } from '@/entities/record.entity'
 import { VersionEntity } from '@/entities/version.entity'
 
 @ApiTags('version')
@@ -25,14 +24,6 @@ export class VersionController {
     return this.service.page(body)
   }
 
-  @Post('create')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '发布全量更新' })
-  @ApiResult({ type: VersionEntity })
-  create(@Req() req: Request, @Body() body: VersionCreateBody) {
-    return this.service.create(req, body)
-  }
-
   @Public()
   @Post('check')
   @ApiOperation({ summary: '检查更新' })
@@ -43,16 +34,24 @@ export class VersionController {
 
   @Public()
   @Post('failure/:id')
-  @ApiOperation({ summary: '上报更新失败' })
-  @ApiResult({ type: RecordEntity })
+  @ApiOperation({ summary: '上报更新状态' })
+  @ApiResult({ type: String })
   failure(@Req() req: Request, @Param('id') id: string) {
     return this.service.failure(req, id)
+  }
+
+  @Post('create')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '创建更新版本' })
+  @ApiResult({ type: VersionEntity })
+  create(@Req() req: Request, @Body() body: VersionCreateBody) {
+    return this.service.create(req, body)
   }
 
   @Post('upload')
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: '上传热更新包' })
+  @ApiOperation({ summary: '上传更新资源' })
   @ApiResult({ type: VersionEntity })
   @UseInterceptors(FileInterceptor('file'))
   upload(

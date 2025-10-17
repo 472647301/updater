@@ -1,9 +1,9 @@
-import { RecordEntity, UpdateStatus } from '@/entities/record.entity'
 import { VersionEntity } from '@/entities/version.entity'
 import { PackageType } from '@/entities/version.entity'
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThan, Like, FindOptionsWhere, Between } from 'typeorm'
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm'
+import { Repository, MoreThan, Like, EntitySchema } from 'typeorm'
+import { FindOptionsWhere, Between, DataSource } from 'typeorm'
 import { Request } from 'express'
 import { VersionCheckBody, VersionUpadteBody } from './version.dto'
 import { VersionPageBody, VersionCreateBody } from './version.dto'
@@ -17,8 +17,7 @@ export class VersionService {
   private updater?: UpdaterUtil
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(RecordEntity)
-    private readonly tRecord: Repository<RecordEntity>,
+    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(VersionEntity)
     private readonly tVersion: Repository<VersionEntity>
   ) {
@@ -57,6 +56,7 @@ export class VersionService {
   }
 
   async create(req: Request, body: VersionCreateBody) {
+    await this.createTable(body.name)
     const version = body.ver.replace(/\./g, '')
     const entity = new VersionEntity()
     entity.version = Number(version)
@@ -71,7 +71,7 @@ export class VersionService {
     return apiUtil.data(res)
   }
 
-  async check(req: Request, body: VersionCheckBody) {
+  async check(_req: Request, body: VersionCheckBody) {
     const version = body.ver.replace(/\./g, '')
     const [hot, install] = await Promise.all([
       this.tVersion.findOne({
@@ -98,25 +98,11 @@ export class VersionService {
         order: { id: 'DESC' }
       })
     ])
-
     const item = install || hot
     if (!item) return apiUtil.data({})
-
-    const record = new RecordEntity()
-    const extras = body.extras
-    delete body.extras
-    record.request = body
-    record.response = item
-    record.extras = extras
-    record.versionId = item.id
-    record.status = UpdateStatus.Success
-    record.ip = fetchIP(req)
-    const entity = await this.tRecord.save(record)
-
     return apiUtil.data({
       id: item.id,
       desc: item.desc,
-      recordId: entity.id,
       isMandatory: item.isMandatory,
       downloadUrl: item.downloadUrl,
       type: item.type
@@ -125,16 +111,20 @@ export class VersionService {
 
   async failure(req: Request, id: string) {
     const ip = fetchIP(req)
-    const entity = await this.tRecord.findOneBy({
-      ip: ip,
-      status: UpdateStatus.Success,
+    const ver = await this.tVersion.findOneBy({
       id: Number(id)
     })
-    if (!entity) return apiUtil.data(null)
-    entity.status = UpdateStatus.Failure
-    entity.error = req.body.error ?? null
-    await this.tRecord.save(entity)
-    return apiUtil.data(entity)
+    if (!ver) return apiUtil.data('资源不存在')
+    const entity = this.createEntity(ver.name)
+    const repository = this.dataSource.getRepository(entity)
+    return repository.manager.create(entity, {
+      username: req.body.username,
+      device_id: req.body.device_id,
+      result: req.body.result ?? 'none',
+      extras: req.body.extras,
+      version_id: ver.id,
+      ip: ip
+    })
   }
 
   async upload(
@@ -150,6 +140,7 @@ export class VersionService {
     } catch (err) {
       return apiUtil.error(err)
     }
+    await this.createTable(body.name)
     const entity = new VersionEntity()
     entity.version = Number(version)
     entity.name = body.name
@@ -163,5 +154,69 @@ export class VersionService {
     entity.ip = fetchIP(req)
     const res = await this.tVersion.save(entity)
     return apiUtil.data(res)
+  }
+
+  private async checkTableExists(
+    tableName: string,
+    schemaName?: string
+  ): Promise<boolean> {
+    const entity = this.createEntity(tableName)
+    const repository = this.dataSource.getRepository(entity)
+    let query: string
+    if (schemaName) {
+      query = `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = '${schemaName}' AND table_name = '${tableName}')`
+    } else {
+      // For databases like MySQL, where schema is often the database name, or if not explicitly using schemas
+      query = `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '${tableName}')`
+    }
+    const result: { exists: boolean }[] = await repository.manager.query(query)
+    return result[0].exists
+  }
+
+  private createEntity(tableName: string) {
+    return new EntitySchema({
+      name: tableName.replace(/\W/g, '_'),
+      columns: {
+        id: {
+          type: 'int',
+          primary: true,
+          generated: true
+        },
+        result: {
+          type: 'varchar'
+        },
+        username: {
+          type: 'varchar',
+          nullable: true
+        },
+        device_id: {
+          type: 'varchar',
+          nullable: true
+        },
+        version_id: {
+          type: 'int'
+        },
+        extras: {
+          type: 'json',
+          nullable: true
+        },
+        ip: {
+          type: 'varchar',
+          nullable: true
+        }
+      }
+    })
+  }
+
+  private async createTable(tableName: string) {
+    const isExists = await this.checkTableExists(tableName)
+    if (isExists) return
+    const entity = this.createEntity(tableName)
+    const dataSource = this.dataSource.setOptions({
+      entities: [entity]
+    })
+    dataSource.getMetadata(entity).build()
+    const schemaBuilder = dataSource.driver.createSchemaBuilder()
+    await schemaBuilder.build()
   }
 }
