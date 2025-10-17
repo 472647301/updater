@@ -172,6 +172,7 @@ export class VersionService {
           isGenerated: true,
           generationStrategy: 'increment'
         },
+        { name: 'version', type: 'int' },
         { name: 'version_id', type: 'int' },
         { name: 'ip', type: 'varchar', isNullable: true },
         { name: 'extras', type: 'json', isNullable: true },
@@ -200,16 +201,6 @@ export class VersionService {
         tableQuery.where('id = :id', { id: body.id }) // Specify your WHERE clause
         await tableQuery.execute()
       } else {
-        const data = {
-          username: body.username,
-          device_id: body.device_id,
-          result: body.result,
-          extras: body.extras,
-          create_time: new Date(),
-          update_time: new Date(),
-          version_id: ver.id,
-          ip: body.ip
-        }
         const tableQuery = queryBuilder.insert().into(tableName)
         tableQuery.values({
           username: body.username,
@@ -218,6 +209,7 @@ export class VersionService {
           extras: body.extras,
           create_time: new Date(),
           update_time: new Date(),
+          version: ver.version,
           version_id: ver.id,
           ip: body.ip
         })
