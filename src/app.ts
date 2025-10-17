@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { DatabaseLogger } from './utils/logs'
 import { join } from 'path'
-import { RecordModule } from './api/record/record.module'
+
 import { VersionModule } from './api/version/version.module'
 import { AdminModule } from './api/admin/admin.module'
 
@@ -29,7 +29,6 @@ import { AdminModule } from './api/admin/admin.module'
       inject: [ConfigService]
     }),
     AdminModule,
-    RecordModule,
     VersionModule
   ],
   controllers: []

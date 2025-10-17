@@ -36,6 +36,14 @@ export class VersionCheckBody {
   channel?: string
 }
 
+export class VersionFailureBody {
+  id?: number
+  username?: string
+  device_id?: string
+  result?: string
+  extras?: any
+}
+
 export class VersionUpadteBody extends OmitType(VersionCheckBody, [
   'id',
   'platform'

@@ -5,7 +5,8 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
 import { VersionService } from './version.service'
 import { ApiResult, Public } from '@/decorators'
-import { VersionCheckBody, VersionPageBody } from './version.dto'
+import { VersionCheckBody, VersionFailureBody } from './version.dto'
+import { VersionPageBody } from './version.dto'
 import { VersionCheckEntity, VersionUpadteBody } from './version.dto'
 import { VersionCreateBody } from './version.dto'
 import { FileInterceptor } from '@nestjs/platform-express'
@@ -36,8 +37,12 @@ export class VersionController {
   @Post('failure/:id')
   @ApiOperation({ summary: '上报更新状态' })
   @ApiResult({ type: String })
-  failure(@Req() req: Request, @Param('id') id: string) {
-    return this.service.failure(req, id)
+  failure(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() body: VersionFailureBody
+  ) {
+    return this.service.failure(req, id, body)
   }
 
   @Post('create')

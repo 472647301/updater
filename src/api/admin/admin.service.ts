@@ -6,7 +6,7 @@ import { apiUtil } from '@/utils/api'
 import { AdminEntity } from '@/entities/admin.entity'
 import { AuthService } from '@/auth/auth.service'
 import { join } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, writeFileSync } from 'fs'
 
 const lockPath = join(__dirname, '../../../public/admin.lock')
 
@@ -27,7 +27,9 @@ export class AdminService {
     const entity = new AdminEntity()
     entity.username = body.username
     entity.password = body.password
-    return this.admin.save(entity)
+    const res = await this.admin.save(entity)
+    writeFileSync(lockPath, body.username)
+    return apiUtil.data(res)
   }
 
   async login(body: AdminLoginBody) {

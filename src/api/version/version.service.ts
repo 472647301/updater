@@ -2,10 +2,11 @@ import { VersionEntity } from '@/entities/version.entity'
 import { PackageType } from '@/entities/version.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThan, Like, EntitySchema } from 'typeorm'
+import { Repository, MoreThan, Like, Table } from 'typeorm'
 import { FindOptionsWhere, Between, DataSource } from 'typeorm'
 import { Request } from 'express'
-import { VersionCheckBody, VersionUpadteBody } from './version.dto'
+import { VersionCheckBody, VersionFailureBody } from './version.dto'
+import { VersionUpadteBody } from './version.dto'
 import { VersionPageBody, VersionCreateBody } from './version.dto'
 import { fetchIP } from '@/utils/utils'
 import { apiUtil } from '@/utils/api'
@@ -56,7 +57,6 @@ export class VersionService {
   }
 
   async create(req: Request, body: VersionCreateBody) {
-    await this.createTable(body.name)
     const version = body.ver.replace(/\./g, '')
     const entity = new VersionEntity()
     entity.version = Number(version)
@@ -67,6 +67,7 @@ export class VersionService {
     entity.type = PackageType.Install
     entity.channel = body.channel
     entity.ip = fetchIP(req)
+    await this.createTable(body.name)
     const res = await this.tVersion.save(entity)
     return apiUtil.data(res)
   }
@@ -109,22 +110,25 @@ export class VersionService {
     })
   }
 
-  async failure(req: Request, id: string) {
+  async failure(req: Request, id: string, body: VersionFailureBody) {
     const ip = fetchIP(req)
+    if (!body.result) return apiUtil.data({})
     const ver = await this.tVersion.findOneBy({
       id: Number(id)
     })
     if (!ver) return apiUtil.data('资源不存在')
-    const entity = this.createEntity(ver.name)
-    const repository = this.dataSource.getRepository(entity)
-    return repository.manager.create(entity, {
-      username: req.body.username,
-      device_id: req.body.device_id,
-      result: req.body.result ?? 'none',
-      extras: req.body.extras,
+    const res = await this.updateTable(ver, {
+      id: body.id,
+      username: body.username,
+      device_id: body.device_id,
+      result: body.result,
+      extras: body.extras,
+      create_time: new Date(),
+      update_time: new Date(),
       version_id: ver.id,
       ip: ip
     })
+    return apiUtil.data({ rowId: res })
   }
 
   async upload(
@@ -140,7 +144,6 @@ export class VersionService {
     } catch (err) {
       return apiUtil.error(err)
     }
-    await this.createTable(body.name)
     const entity = new VersionEntity()
     entity.version = Number(version)
     entity.name = body.name
@@ -152,71 +155,93 @@ export class VersionService {
     entity.type = PackageType.Hot
     entity.fileSize = file.size
     entity.ip = fetchIP(req)
+    await this.createTable(body.name)
     const res = await this.tVersion.save(entity)
     return apiUtil.data(res)
   }
 
-  private async checkTableExists(
-    tableName: string,
-    schemaName?: string
-  ): Promise<boolean> {
-    const entity = this.createEntity(tableName)
-    const repository = this.dataSource.getRepository(entity)
-    let query: string
-    if (schemaName) {
-      query = `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = '${schemaName}' AND table_name = '${tableName}')`
-    } else {
-      // For databases like MySQL, where schema is often the database name, or if not explicitly using schemas
-      query = `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = '${tableName}')`
-    }
-    const result: { exists: boolean }[] = await repository.manager.query(query)
-    return result[0].exists
-  }
-
-  private createEntity(tableName: string) {
-    return new EntitySchema({
-      name: tableName.replace(/\W/g, '_'),
-      columns: {
-        id: {
+  private dynamicTable(name: string) {
+    const tableName = name.replace(/\W/g, '_')
+    return new Table({
+      name: tableName,
+      columns: [
+        {
+          name: 'id',
           type: 'int',
-          primary: true,
-          generated: true
+          isPrimary: true,
+          isGenerated: true,
+          generationStrategy: 'increment'
         },
-        result: {
-          type: 'varchar'
-        },
-        username: {
-          type: 'varchar',
-          nullable: true
-        },
-        device_id: {
-          type: 'varchar',
-          nullable: true
-        },
-        version_id: {
-          type: 'int'
-        },
-        extras: {
-          type: 'json',
-          nullable: true
-        },
-        ip: {
-          type: 'varchar',
-          nullable: true
-        }
-      }
+        { name: 'version_id', type: 'int' },
+        { name: 'ip', type: 'varchar', isNullable: true },
+        { name: 'extras', type: 'json', isNullable: true },
+        { name: 'result', type: 'varchar', isNullable: true },
+        { name: 'username', type: 'varchar', isNullable: true },
+        { name: 'device_id', type: 'varchar', isNullable: true },
+        { name: 'update_time', type: 'datetime', isNullable: true },
+        { name: 'create_time', type: 'datetime', isNullable: true }
+      ]
     })
   }
 
-  private async createTable(tableName: string) {
-    const isExists = await this.checkTableExists(tableName)
-    if (isExists) return
-    const entity = this.createEntity(tableName)
-    const dataSource = this.dataSource.setOptions({
-      entities: [entity]
-    })
-    dataSource.getMetadata(entity).build()
-    const schemaBuilder = dataSource.driver.createSchemaBuilder()
-    await schemaBuilder.build()
+  private async updateTable(ver: VersionEntity, body: any) {
+    const tableName = ver.name.replace(/\W/g, '_')
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    const queryBuilder = queryRunner.manager.createQueryBuilder()
+    try {
+      let rowId: undefined | number = undefined
+      if (body.id) {
+        const tableQuery = queryBuilder.update(tableName)
+        tableQuery.set({
+          result: body.result,
+          update_time: new Date()
+        })
+        tableQuery.where('id = :id', { id: body.id }) // Specify your WHERE clause
+        await tableQuery.execute()
+      } else {
+        const data = {
+          username: body.username,
+          device_id: body.device_id,
+          result: body.result,
+          extras: body.extras,
+          create_time: new Date(),
+          update_time: new Date(),
+          version_id: ver.id,
+          ip: body.ip
+        }
+        const tableQuery = queryBuilder.insert().into(tableName)
+        tableQuery.values({
+          username: body.username,
+          device_id: body.device_id,
+          result: body.result,
+          extras: body.extras,
+          create_time: new Date(),
+          update_time: new Date(),
+          version_id: ver.id,
+          ip: body.ip
+        })
+        const row = await tableQuery.execute()
+        rowId = row.raw.insertId
+      }
+      return rowId
+    } catch (error) {
+      throw error
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
+  private async createTable(name: string) {
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    try {
+      const table = this.dynamicTable(name)
+      await queryRunner.createTable(table, true)
+    } catch (error) {
+      throw error
+    } finally {
+      await queryRunner.release()
+    }
   }
 }
