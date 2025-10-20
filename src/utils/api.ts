@@ -13,6 +13,9 @@ export const apiUtil = {
     message: string | Record<string, any>,
     status: number = HttpStatus.BAD_REQUEST
   ) => {
+    if (message instanceof Error) {
+      throw new HttpException(message.message, status)
+    }
     throw new HttpException(message, status)
   }
 }
