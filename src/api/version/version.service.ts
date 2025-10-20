@@ -206,7 +206,10 @@ export class VersionService {
           username: body.username,
           device_id: body.device_id,
           result: body.result,
-          extras: body.extras,
+          extras:
+            typeof body.extras !== 'string'
+              ? JSON.stringify(body.extras)
+              : body.extras,
           create_time: new Date(),
           update_time: new Date(),
           version: ver.version,
