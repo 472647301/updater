@@ -120,7 +120,7 @@ export class VersionService {
     const res = await this.updateTable(ver, {
       id: body.id,
       username: body.username,
-      device_id: body.device_id,
+      device_id: body.deviceId,
       result: body.result,
       extras: body.extras,
       create_time: new Date(),

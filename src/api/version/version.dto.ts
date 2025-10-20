@@ -39,7 +39,7 @@ export class VersionCheckBody {
 export class VersionFailureBody {
   id?: number
   username?: string
-  device_id?: string
+  deviceId?: string
   result?: string
   extras?: any
 }
