@@ -6,6 +6,7 @@ import { join } from 'path'
 
 import { VersionModule } from './api/version/version.module'
 import { AdminModule } from './api/admin/admin.module'
+import { ReportModule } from './api/report/report.module'
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AdminModule } from './api/admin/admin.module'
       inject: [ConfigService]
     }),
     AdminModule,
+    ReportModule,
     VersionModule
   ],
   controllers: []

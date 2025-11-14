@@ -41,12 +41,11 @@ export class VersionService {
     if (typeof body.enable === 'number') where.enable = body.enable
     if (typeof body.isMandatory === 'number')
       where.isMandatory = body.isMandatory
-    if (body.platform) where.platform = body.platform
-    if (body.desc) where.desc = Like(`%${body.desc}%`)
+    if (body.name) where.name = body.name
     if (body.channel) where.channel = body.channel
     if (body.version) where.version = body.version
-    if (body.name) where.name = body.name
-    if (body.ip) where.ip = Like(`%${body.ip}%`)
+    if (body.platform) where.platform = body.platform
+    if (body.desc) where.desc = Like(`%${body.desc}%`)
     const [list, total] = await this.tVersion.findAndCount({
       take: take,
       skip: skip,
