@@ -15,8 +15,14 @@ type TRes = {
 @Injectable()
 export class TransformInterceptor implements NestInterceptor<object, TRes> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<TRes> {
+    let msg: string | undefined
     const req = context.switchToHttp().getRequest<Request>()
-    Logs.app.info(fetchIP(req), req.originalUrl, req.query, req.body)
+    if (req.body) {
+      msg = JSON.stringify(req.body)
+    } else if (req.query) {
+      msg = JSON.stringify(req.query)
+    }
+    Logs.app.info(fetchIP(req), req.originalUrl, msg)
     return next.handle().pipe(map(data => data))
   }
 }
