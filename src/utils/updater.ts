@@ -3,6 +3,7 @@ import * as AliOSS from 'ali-oss'
 import { join } from 'path'
 import { to } from './utils'
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { Logs } from './logs'
 
 export class UpdaterUtil {
   private oss?: AliOSS
@@ -29,6 +30,7 @@ export class UpdaterUtil {
       const ossPath = join(ossDir, dir, filrName)
       const [err, res] = await to(this.oss.put(ossPath, file.buffer))
       if (res?.res.status !== 200) {
+        Logs.err.error(err ?? res)
         throw err
       }
       return `${ossUrl}/${ossPath}`
