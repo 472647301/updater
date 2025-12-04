@@ -31,7 +31,7 @@ export class UpdaterUtil {
       const [err, res] = await to(
         this.oss.put(ossPath, file.buffer, { timeout: 600000 })
       )
-      if (res?.res.status !== 200) {
+      if (err || res?.res.status !== 200) {
         Logs.err.error(err ?? res)
         throw err || new Error(`put error`)
       }

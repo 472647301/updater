@@ -135,14 +135,10 @@ export class VersionService {
     file: Express.Multer.File,
     body: VersionUpadteBody
   ) {
-    let downloadUrl = ''
     const version = body.ver.replace(/\./g, '')
     const dir = `${body.name}/${version}`
-    try {
-      downloadUrl = await this.updater?.put(dir, file)
-    } catch (err) {
-      return apiUtil.error(err)
-    }
+    const downloadUrl = await this.updater?.put(dir, file)
+    if (!downloadUrl) return apiUtil.error('upload failed')
     const entity = new VersionEntity()
     entity.version = Number(version)
     entity.name = body.name
