@@ -33,7 +33,7 @@ export class UpdaterUtil {
       )
       if (res?.res.status !== 200) {
         Logs.err.error(err ?? res)
-        throw err
+        throw err || new Error(`put error`)
       }
       return `${ossUrl}/${ossPath}`
     }
