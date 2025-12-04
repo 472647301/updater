@@ -28,7 +28,9 @@ export class UpdaterUtil {
       const ossDir = this.configService.get('OSS_DIR') || ''
       const ossUrl = this.configService.get('OSS_URL') || ''
       const ossPath = join(ossDir, dir, filrName)
-      const [err, res] = await to(this.oss.put(ossPath, file.buffer))
+      const [err, res] = await to(
+        this.oss.put(ossPath, file.buffer, { timeout: 600000 })
+      )
       if (res?.res.status !== 200) {
         Logs.err.error(err ?? res)
         throw err
