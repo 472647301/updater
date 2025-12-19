@@ -137,13 +137,15 @@ export class VersionService {
   ) {
     const version = body.ver.replace(/\./g, '')
     const dir = `${body.name}/${version}`
-    const downloadUrl = await this.updater?.put(dir, file)
-    if (!downloadUrl) return apiUtil.error('upload failed')
+    const assets = await this.updater?.put(dir, file)
+    if (!assets || !assets.url) {
+      return apiUtil.error(assets.err ?? 'upload failed')
+    }
     const entity = new VersionEntity()
     entity.version = Number(version)
     entity.name = body.name
     entity.desc = body.desc ?? null
-    entity.downloadUrl = downloadUrl
+    entity.downloadUrl = assets.url
     entity.platform = body.platform
     entity.isMandatory = body.isMandatory ? Number(body.isMandatory) : 1
     entity.channel = body.channel
