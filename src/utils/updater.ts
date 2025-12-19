@@ -3,7 +3,6 @@ import * as AliOSS from 'ali-oss'
 import { join } from 'path'
 import { to } from './utils'
 import { existsSync, mkdirSync, writeFileSync } from 'fs'
-import { Logs } from './logs'
 
 export class UpdaterUtil {
   private oss?: AliOSS
@@ -22,7 +21,10 @@ export class UpdaterUtil {
     }
   }
 
-  async put(dir: string, file: Express.Multer.File) {
+  async put(
+    dir: string,
+    file: Express.Multer.File
+  ): Promise<{ err?: string; url?: string }> {
     const filrName = `${Date.now()}.${file.originalname.split('.').pop()}`
     if (this.oss) {
       const ossDir = this.configService.get('OSS_DIR') || ''
@@ -32,10 +34,15 @@ export class UpdaterUtil {
         this.oss.put(ossPath, file.buffer, { timeout: 600000 })
       )
       if (err || res?.res.status !== 200) {
-        Logs.err.error(err ?? res)
-        throw err || new Error(`put error`)
+        return {
+          err: err?.message
+            ? err?.message
+            : res
+            ? JSON.stringify(res)
+            : 'upload fail'
+        }
       }
-      return `${ossUrl}/${ossPath}`
+      return { url: `${ossUrl}/${ossPath}` }
     }
     try {
       const localDir = join(__dirname, `../../public/files/${dir}`)
@@ -43,9 +50,11 @@ export class UpdaterUtil {
         mkdirSync(localDir, { recursive: true })
       }
       writeFileSync(`${localDir}/${filrName}`, file.buffer as never)
-      return `/${dir}/${filrName}`
+      return { url: `/${dir}/${filrName}` }
     } catch (err) {
-      throw err
+      return {
+        err: err?.message ? err?.message : 'upload fail'
+      }
     }
   }
 }

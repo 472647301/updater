@@ -1,6 +1,6 @@
 import { AppModule } from './app'
 import { NestFactory } from '@nestjs/core'
-import { Logger, ValidationPipe } from '@nestjs/common'
+import { ValidationPipe } from '@nestjs/common'
 import { ExceptionFilter } from './middleware/exception.filter'
 import { TransformInterceptor } from './middleware/transform.interceptor'
 import { NestExpressApplication } from '@nestjs/platform-express'
@@ -12,12 +12,6 @@ import { urlencoded, json } from 'express'
 import * as dotenv from 'dotenv'
 import * as Log4js from 'log4js'
 import helmet from 'helmet'
-import { readFileSync } from 'fs'
-import { join } from 'path'
-
-const log = new Logger('Nest', {
-  timestamp: true
-})
 
 dotenv.config({ path: '.env' })
 
@@ -58,13 +52,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, builder.build())
   SwaggerModule.setup('api/docs', app, document)
 
-  await app.listen(configService.get('PORT') || 3001, () => {
-    const text = readFileSync(join(__dirname, '../.env.example')).toString()
-    const arr = text.split('\n').filter(str => str.indexOf('#') === -1)
-    arr.forEach(key =>
-      log.log(`${key}${configService.get(key.replace('=', ''))}`)
-    )
-  })
+  await app.listen(configService.get('PORT') || 3001)
 }
 
 bootstrap()

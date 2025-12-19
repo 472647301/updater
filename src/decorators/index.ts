@@ -1,15 +1,16 @@
-import { Type, applyDecorators, HttpStatus, SetMetadata } from '@nestjs/common'
+import { SetMetadata } from '@nestjs/common'
+import { Type, applyDecorators, HttpStatus } from '@nestjs/common'
 import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger'
 
 export const IS_PUBLIC_KEY = 'isPublic'
+
+const baseTypeNames = ['String', 'Number', 'Boolean']
 
 /**
  * @name: 不检查token装饰器
  * @example `@Public()`
  */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true)
-
-const baseTypeNames = ['String', 'Number', 'Boolean']
 
 interface IApiResult<TModel extends Type> {
   type: TModel | TModel[]
@@ -22,37 +23,36 @@ interface IApiResult<TModel extends Type> {
  */
 export const ApiResult = <TModel extends Type>(params: IApiResult<TModel>) => {
   let prop: any = null
+  const model = Array.isArray(params.type) ? params.type[0] : params.type
 
-  if (Array.isArray(params.type)) {
-    if (params.isPage) {
+  if (params.isPage) {
+    prop = {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: getSchemaPath(model) }
+        },
+        total: { type: 'number', default: 0 }
+      }
+    }
+  } else if (Array.isArray(params.type)) {
+    if (baseTypeNames.includes(model.name)) {
       prop = {
-        type: 'object',
-        properties: {
-          data: {
-            type: 'array',
-            items: { $ref: getSchemaPath(params.type[0]) }
-          },
-          total: { type: 'number', default: 0 }
-        }
+        type: 'array',
+        items: { type: model.name.toLocaleLowerCase() }
       }
     } else {
       prop = {
         type: 'array',
-        items: { $ref: getSchemaPath(params.type[0]) }
+        items: { $ref: getSchemaPath(model) }
       }
     }
-  } else if (params.type) {
-    if (params.type && baseTypeNames.includes(params.type.name)) {
-      prop = { type: params.type.name.toLocaleLowerCase() }
-    } else {
-      prop = { $ref: getSchemaPath(params.type) }
-    }
+  } else if (baseTypeNames.includes(params.type.name)) {
+    prop = { type: params.type.name.toLocaleLowerCase() }
   } else {
-    prop = { type: 'null', default: null }
+    prop = { $ref: getSchemaPath(model) }
   }
-
-  const model = Array.isArray(params.type) ? params.type[0] : params.type
-
   return applyDecorators(
     ApiExtraModels(model),
     ApiResponse({
